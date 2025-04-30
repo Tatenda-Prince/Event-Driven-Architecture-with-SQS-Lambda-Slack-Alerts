@@ -12,8 +12,8 @@ resource "aws_lambda_function" "event_processor" {
   timeout       = 10
   memory_size   = 128
 
-  filename         = "${path.module}/lambda/lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/lambda/lambda.zip")
+  filename         = "${path.module}/lambda.zip"
+  source_code_hash = filebase64sha256("${path.module}/lambda.zip")
 
   environment {
     variables = {
@@ -21,6 +21,7 @@ resource "aws_lambda_function" "event_processor" {
     }
   }
 }
+
 
 resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {
   event_source_arn  = aws_sqs_queue.ci_events_queue.arn
