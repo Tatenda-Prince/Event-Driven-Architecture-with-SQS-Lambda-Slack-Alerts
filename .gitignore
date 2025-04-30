@@ -1,0 +1,36 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+terraform.tfvars
+terraform.tfvars.json
+*.backup
+
+# Python (Lambda function)
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# GitHub Actions temp
+*.bak
+
