@@ -34,16 +34,32 @@ jobs:
 
       - name: Build Lambda deployment package
         run: |
+          echo "📁 Listing initial lambda directory"
+          ls -l lambda
+
           cd lambda
-          pip install -r requirements.txt -t .
-          zip -r lambda.zip .
-          cd ..
-          mv lambda/lambda.zip ./lambda.zip
-          mv lambda.zip lambda/lambda.zip
-          if [ ! -f lambda/lambda.zip ]; then
-            echo "❌ Error: lambda.zip not found!"
+
+          # Ensure requirements.txt exists
+          if [ ! -f requirements.txt ]; then
+            echo "❌ Error: requirements.txt not found!"
             exit 1
           fi
+
+          # Install dependencies
+          echo "📦 Installing Python dependencies"
+          pip install -r requirements.txt -t . || exit 1
+
+          # Package Lambda
+          echo "🗜️ Creating lambda.zip"
+          zip -r ../lambda.zip . || exit 1
+          cd ..
+
+          # Confirm lambda.zip was created
+          if [ ! -f lambda.zip ]; then
+            echo "❌ Error: lambda.zip not found after packaging!"
+            exit 1
+          fi
+          echo "✅ lambda.zip created successfully"
 
       - name: Terraform Init
         run: terraform init
