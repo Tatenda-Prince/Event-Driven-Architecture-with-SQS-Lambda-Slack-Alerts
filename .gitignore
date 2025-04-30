@@ -33,4 +33,7 @@ Thumbs.db
 
 # GitHub Actions temp
 *.bak
+# AWS Lambda deployment package
+lambda/lambda.zip
+
 
