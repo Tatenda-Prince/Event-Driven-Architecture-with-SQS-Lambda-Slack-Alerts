@@ -32,12 +32,19 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # ✅ Lambda Build Step - ensures lambda.zip exists
+      # ✅ Fixed Lambda Build Step
       - name: Build Lambda deployment package
         run: |
           cd lambda
           pip install -r requirements.txt -t .
           zip -r lambda.zip .
+          cd ..
+          mv lambda/lambda.zip ./lambda.zip
+          mv lambda.zip lambda/lambda.zip
+          if [ ! -f lambda/lambda.zip ]; then
+            echo "❌ Error: lambda.zip not found!"
+            exit 1
+          fi
 
       - name: Terraform Init
         run: terraform init
