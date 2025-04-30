@@ -29,8 +29,10 @@ jobs:
           role-to-assume: arn:aws:iam::970547345579:role/GitHubTerraformRole
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
       - name: Build Lambda deployment package
         run: |
@@ -45,11 +47,16 @@ jobs:
             exit 1
           fi
 
-          # Install dependencies
+          # Upgrade pip and install dependencies locally
           echo "📦 Installing Python dependencies"
+          pip install --upgrade pip
           pip install -r requirements.txt -t . || exit 1
 
-          # Package Lambda
+          # Show what's in the directory
+          echo "📁 Contents before zipping"
+          ls -lh
+
+          # Zip everything in lambda directory
           echo "🗜️ Creating lambda.zip"
           zip -r ../lambda.zip . || exit 1
           cd ..
@@ -60,6 +67,10 @@ jobs:
             exit 1
           fi
           echo "✅ lambda.zip created successfully"
+          ls -lh lambda.zip
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
