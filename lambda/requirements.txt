@@ -1,4 +1,6 @@
 requests==2.27.1
 charset-normalizer~=2.0.0
 urllib3==1.26.20
+boto3
+requests
 
