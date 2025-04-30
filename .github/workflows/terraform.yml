@@ -32,7 +32,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # ✅ Fixed Lambda Build Step
       - name: Build Lambda deployment package
         run: |
           cd lambda
