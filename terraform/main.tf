@@ -1,6 +1,6 @@
 # Create the SQS queue
 resource "aws_sqs_queue" "ci_events_queue" {
-  name                       = "ci-events-queue-tatenda"
+  name                       = "ci-events-queue"
   visibility_timeout_seconds = 30
   message_retention_seconds  = 86400
 }
