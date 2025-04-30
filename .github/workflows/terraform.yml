@@ -17,7 +17,7 @@ jobs:
 
     env:
       AWS_REGION: us-east-1
-      TF_WORKING_DIR: .
+      TF_WORKING_DIR: ./terraform
 
     steps:
       - name: Checkout repo
