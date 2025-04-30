@@ -48,11 +48,11 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
-# ✅ This permission allows SQS to trigger your Lambda
+# ✅ Corrected Lambda permission block
 resource "aws_lambda_permission" "allow_sqs" {
   statement_id  = "AllowExecutionFromSQS"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.processor.function_name
+  function_name = aws_lambda_function.event_processor.function_name
   principal     = "sqs.amazonaws.com"
   source_arn    = aws_sqs_queue.ci_events_queue.arn
 }
