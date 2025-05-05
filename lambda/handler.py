@@ -3,17 +3,22 @@ import os
 import boto3
 import urllib3
 
+# Initialize clients
 http = urllib3.PoolManager()
 ssm = boto3.client('ssm')
 
-# Get the parameter name from environment variable
-PARAM_NAME = os.environ.get("SLACK_SSM_PARAM_NAME")
+# Correct environment variable name
+PARAM_NAME = os.environ.get("SLACK_WEBHOOK_PARAM_NAME")
 
 def get_slack_webhook_url():
+    if not PARAM_NAME:
+        print("[ERROR] Environment variable 'SLACK_WEBHOOK_PARAM_NAME' is not set.")
+        return None
+
     try:
         response = ssm.get_parameter(
             Name=PARAM_NAME,
-            WithDecryption=True  # This is needed for SecureString
+            WithDecryption=True  # Needed if SecureString is used
         )
         return response['Parameter']['Value']
     except Exception as e:
@@ -28,14 +33,14 @@ def lambda_handler(event, context):
             "body": "Failed to retrieve Slack webhook URL from SSM"
         }
 
-    for record in event['Records']:
-        message_body = record['body']
+    for record in event.get('Records', []):
+        message_body = record.get('body', '')
         print(f"[INFO] Received SQS message: {message_body}")
 
         try:
             message = json.loads(message_body)
-        except Exception as e:
-            print(f"[ERROR] Failed to parse JSON: {e}")
+        except json.JSONDecodeError:
+            print("[ERROR] Failed to parse JSON from SQS message.")
             message = {"error": "Invalid JSON in SQS message", "raw": message_body}
 
         slack_message = {
@@ -50,13 +55,9 @@ def lambda_handler(event, context):
                 headers={"Content-Type": "application/json"}
             )
             print(f"[INFO] Slack response status: {response.status}")
-            print(f"[INFO] Slack response body: {response.data.decode('utf-8')}")
+            if response.status >= 400:
+                print(f"[ERROR] Slack returned error: {response.data.decode('utf-8')}")
         except Exception as e:
             print(f"[ERROR] Failed to send message to Slack: {e}")
 
-    return {"statusCode": 200}
-
-
-
-
-
+    return {"statusCode": 200, "body": "Processed all SQS messages successfully"}
