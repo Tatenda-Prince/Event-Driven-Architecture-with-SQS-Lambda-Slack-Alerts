@@ -15,7 +15,7 @@ resource "aws_ssm_parameter" "slack_webhook_url" {
 # Create the Lambda function
 resource "aws_lambda_function" "event_processor" {
   function_name = "sqs-event-processor"
-  role          = aws_iam_role.lambda_exec_role.arn  # Defined in iam.tf
+  role          = aws_iam_role.lambda_exec_role.arn # Defined in iam.tf
   runtime       = "python3.11"
   handler       = "handler.lambda_handler"
   timeout       = 10
