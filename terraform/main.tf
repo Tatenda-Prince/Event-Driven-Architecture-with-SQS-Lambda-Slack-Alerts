@@ -5,9 +5,6 @@ resource "aws_sqs_queue" "ci_events_queue" {
   message_retention_seconds  = 86400
 }
 
-
-
-
 # Create the Lambda function
 resource "aws_lambda_function" "event_processor" {
   function_name = "sqs-event-processor"
