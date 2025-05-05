@@ -9,7 +9,7 @@ resource "aws_sqs_queue" "ci_events_queue" {
 resource "aws_ssm_parameter" "slack_webhook_url" {
   name  = "/slack/webhook_url"
   type  = "SecureString"
-  value = var.slack_webhook_url
+  
 }
 
 # Create the Lambda function
@@ -26,11 +26,12 @@ resource "aws_lambda_function" "event_processor" {
   source_code_hash = filebase64sha256("${path.module}/lambda.zip")
 
   # Environment variable to specify the SSM parameter name
-  environment {
-    variables = {
-      SLACK_SSM_PARAM_NAME = "/slack/webhook_url"
-    }
+ environment {
+  variables = {
+    SLACK_WEBHOOK_URL = data.aws_ssm_parameter.slack_webhook_url.value
   }
+}
+
 
   tags = {
     Name        = "SQS Event Processor"
