@@ -430,7 +430,7 @@ jobs:
 
 1.Github Actions workflow successfully provisions resources
 
-![image_alt]()
+![image_alt](https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts/blob/ddf119b826ab4840379d206029daeea58dec2cc8/screenshots/Screenshot%202025-05-05%20191746.png)
 
 
 2.Verify if SQS & Lambda is succesfully created
