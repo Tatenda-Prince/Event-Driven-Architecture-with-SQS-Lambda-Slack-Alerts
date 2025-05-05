@@ -3,6 +3,7 @@ variable "slack_webhook_url" {
   type        = string
 }
 
+
 variable "aws_region" {
   description = "AWS region"
   type        = string
