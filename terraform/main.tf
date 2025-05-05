@@ -20,10 +20,10 @@ resource "aws_lambda_function" "event_processor" {
 
   # Instead of the value, just pass the parameter name
   environment {
-  variables = {
-    SLACK_WEBHOOK_PARAM_NAME = "/slack/webhook_url"
+    variables = {
+      SLACK_WEBHOOK_PARAM_NAME = "/slack/webhook_url"
+    }
   }
-}
 
   tags = {
     Name        = "SQS Event Processor"
