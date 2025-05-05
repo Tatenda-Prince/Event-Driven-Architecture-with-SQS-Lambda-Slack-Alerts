@@ -72,7 +72,7 @@ Before we start please git clone the repository below to access access to terraf
 git clone https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts.git
 ```
 
-**Create SSM Parameter Store to store the Slack Webhook URL
+**Create SSM Parameter Store to store the Slack Webhook URL**
 
 Run the following commands
 
