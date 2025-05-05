@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   terraform:
-    name: Terraform Workflow
+    name: Deploy Infrastructure with Terraform
     runs-on: ubuntu-latest
 
     env:
@@ -20,75 +20,64 @@ jobs:
       TF_WORKING_DIR: ./terraform
 
     steps:
-      - name: Checkout repo
+      - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: Configure AWS credentials via OIDC
+      - name: 🔐 Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::970547345579:role/GitHubTerraformRole
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Python
+      - name: 🐍 Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Build Lambda deployment package
+      - name: 📦 Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('lambda/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: 🗜️ Package Lambda deployment
+        working-directory: ./lambda
         run: |
-          echo "📁 Listing initial lambda directory"
-          ls -l lambda
+          echo "📁 Validating Lambda build directory"
+          test -f handler.py || { echo "❌ handler.py not found!"; exit 1; }
+          test -f requirements.txt || { echo "❌ requirements.txt not found!"; exit 1; }
 
-          cd lambda
-
-          # Ensure requirements.txt exists
-          if [ ! -f requirements.txt ]; then
-            echo "❌ Error: requirements.txt not found!"
-            exit 1
-          fi
-
-          # Upgrade pip and install dependencies locally
-          echo "📦 Installing Python dependencies"
+          echo "⬆️ Upgrading pip"
           pip install --upgrade pip
-          pip install -r requirements.txt -t . || exit 1
 
-          # Show what's in the directory
-          echo "📁 Contents before zipping"
-          ls -lh
+          echo "📦 Installing dependencies to current directory"
+          pip install -r requirements.txt -t .
 
-          # Zip everything in lambda directory
-          echo "🗜️ Creating lambda.zip"
-          zip -r ../lambda.zip . || exit 1
-          cd ..
+          echo "🗃 Zipping Lambda function and dependencies"
+          zip -r ../terraform/lambda.zip . -x "*.pyc" "__pycache__/*"
 
-          # Confirm lambda.zip was created
-          if [ ! -f lambda.zip ]; then
-            echo "❌ Error: lambda.zip not found after packaging!"
-            exit 1
-          fi
-          echo "✅ lambda.zip created successfully"
-          ls -lh lambda.zip
-
-      - name: Setup Terraform
+      - name: 🔧 Set up Terraform CLI
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
+      - name: 🌱 Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Format
+      - name: 📐 Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Validate
+      - name: ✅ Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Plan
+      - name: 📋 Terraform Plan
         run: terraform plan -input=false
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Apply (only on main)
+      - name: 🚀 Terraform Apply (main branch only)
         if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve -input=false
         working-directory: ${{ env.TF_WORKING_DIR }}
