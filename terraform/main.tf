@@ -5,12 +5,7 @@ resource "aws_sqs_queue" "ci_events_queue" {
   message_retention_seconds  = 86400
 }
 
-resource "aws_ssm_parameter" "slack_webhook_url" {
-  name  = "/slack/webhook_url"
-  type  = "SecureString"
-  value = "https://hooks.slack.com/services/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"
 
-}
 
 
 # Create the Lambda function
