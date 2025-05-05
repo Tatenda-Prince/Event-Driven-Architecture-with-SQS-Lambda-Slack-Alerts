@@ -1,6 +1,6 @@
 # Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts
 
-![image_alt]()
+![image_alt](https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts/blob/d74c2a510b24e6f5561a4058f49d5263cf96167f/screenshots/Screenshot%202025-05-05%20124235.png)
 
 
 ## Background
