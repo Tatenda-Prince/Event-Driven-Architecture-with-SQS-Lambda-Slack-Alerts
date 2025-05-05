@@ -9,9 +9,9 @@ resource "aws_sqs_queue" "ci_events_queue" {
 resource "aws_ssm_parameter" "slack_webhook_url" {
   name        = "/slack/webhook_url"
   type        = "SecureString"
-  value       = var.slack_webhook_url  # You can pass it via TF var or tfvars file
+  value       = var.slack_webhook_url # You can pass it via TF var or tfvars file
   description = "Slack webhook for CI events"
- 
+
 }
 
 # Create the Lambda function
