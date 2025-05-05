@@ -447,7 +447,7 @@ aws sqs send-message \
 
 5.4.Check CloudWatch logs for Lambda output:
 
-![image_alt]()
+![image_alt](https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts/blob/da7ce3ed6ef5ae04ba6a8733ace0f17aaf189e91/screenshots/Screenshot%202025-05-05%20201050.png)
 
 
 5.5.Check for Slack notifications: 
