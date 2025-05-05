@@ -7,12 +7,13 @@ resource "aws_sqs_queue" "ci_events_queue" {
 
 # Store Slack webhook securely in SSM Parameter Store
 resource "aws_ssm_parameter" "slack_webhook_url" {
+  count       = var.slack_webhook_url != null ? 1 : 0
   name        = "/slack/webhook_url"
   type        = "SecureString"
-  value       = var.slack_webhook_url # You can pass it via TF var or tfvars file
+  value       = var.slack_webhook_url
   description = "Slack webhook for CI events"
-
 }
+
 
 # Create the Lambda function
 resource "aws_lambda_function" "event_processor" {
