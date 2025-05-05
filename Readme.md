@@ -222,3 +222,103 @@ variable "aws_region" {
 }
 
 ```
+
+## Step 2 : Create OIDC Identity Provider in AWS IAM
+2.1.Go to `IAM` → `Identity providers`
+
+2.2.Click `Add provider`
+
+1.`Provider type`: OpenID Connect
+
+2.`Provider URL`:
+```language
+https://token.actions.githubusercontent.com
+```
+
+3.`Audience`:
+```language
+sts.amazonaws.com
+```
+2.3.Click Add provider
+
+
+2.5.**Create an IAM Role for GitHub Actions**
+1.Go to IAM → Roles → Create Role
+
+2.Trusted entity type:
+Select `Web identity`
+
+3.Identity provider:
+Choose the `OIDC provider` you just created
+
+4.Audience: sts.amazonaws.com
+
+5.Conditions (optional but recommended):
+Add a condition to restrict the GitHub repo that can assume the role:
+```language
+{
+  "StringEquals": {
+    "token.actions.githubusercontent.com:sub": "repo:<GITHUB_USERNAME>/<REPO_NAME>:ref:refs/heads/main"
+  }
+}
+
+```
+
+2.6.Create a policy and attach the policy to your role : copy the policy below 
+
+```language
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:*",
+                "dynamodb:*",
+                "lambda:*",
+                "sqs:*",
+                "logs:*",
+                "cloudwatch:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetRole",
+                "iam:GetPolicy",
+                "iam:PassRole",
+                "iam:CreateRole",
+                "iam:DeleteRole",
+                "iam:CreatePolicy",
+                "iam:DeletePolicy",
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:PutRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:ListRolePolicies",
+                "iam:GetPolicyVersion",
+                "iam:ListAttachedRolePolicies"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:PutParameter",
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:us-east-1:<your account id>:parameter/slack/webhook_url"
+        }
+    ]
+}
+```
+
+2.7.Role name:
+Name it something like:
+```language
+GitHubActionsOIDCRole
+```
+
+
+
