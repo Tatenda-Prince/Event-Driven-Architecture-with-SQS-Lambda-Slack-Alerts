@@ -435,7 +435,7 @@ jobs:
 
 2.Verify if SQS & Lambda is succesfully created
 
-![image_alt]()
+![image_alt](https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts/blob/222f982188bd1c18c7f5a4a3c73977faf3676b32/screenshots/Screenshot%202025-05-05%20191838.png)
 
 5.3.Send a test message to SQS:
 
