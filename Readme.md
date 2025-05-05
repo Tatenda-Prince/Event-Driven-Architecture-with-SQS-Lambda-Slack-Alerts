@@ -243,6 +243,7 @@ sts.amazonaws.com
 
 
 2.5.**Create an IAM Role for GitHub Actions**
+
 1.Go to IAM → Roles → Create Role
 
 2.Trusted entity type:
@@ -320,5 +321,136 @@ Name it something like:
 GitHubActionsOIDCRole
 ```
 
+## Step 3: GitHub Actions: CI/CD Setup
+`.github/workflows/terraform.yml`
+
+```language
+name: Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    name: Deploy Infrastructure with Terraform
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1
+      TF_WORKING_DIR: ./terraform
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🔐 Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::970547345579:role/GitHubTerraformRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🐍 Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('lambda/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: 🗜️ Package Lambda deployment
+        working-directory: ./lambda
+        run: |
+          echo "📁 Validating Lambda build directory"
+          test -f handler.py || { echo "❌ handler.py not found!"; exit 1; }
+          test -f requirements.txt || { echo "❌ requirements.txt not found!"; exit 1; }
+
+          echo "⬆️ Upgrading pip"
+          pip install --upgrade pip
+
+          echo "📦 Installing dependencies to current directory"
+          pip install -r requirements.txt -t .
+
+          echo "🗃 Zipping Lambda function and dependencies"
+          zip -r ../terraform/lambda.zip . -x "*.pyc" "__pycache__/*"
+
+      - name: 🔧 Set up Terraform CLI
+        uses: hashicorp/setup-terraform@v3
+
+      - name: 🌱 Terraform Init
+        run: terraform init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: 📐 Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: ✅ Terraform Validate
+        run: terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: 📋 Terraform Plan
+        run: terraform plan -input=false
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: 🚀 Terraform Apply (main branch only)
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -input=false
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+```
+
+## Step 5: Testing the CI/CD System
+5.1.Push a change to the `main` branch on GitHub
+
+5.2.GitHub Actions will run, authenticate using OIDC, and apply Terraform
+
+1.Github Actions workflow successfully provisions resources
+
+![image_alt]()
 
 
+2.Verify if SQS & Lambda is succesfully created
+
+![image_alt]()
+
+5.3.Send a test message to SQS:
+
+```language
+aws sqs send-message \
+  --queue-url https://sqs.us-east-1.amazonaws.com/123456789012/ci-events-queue \
+  --message-body '{"status":"error","message":"Terraform Apply Failed"}'
+```
+
+5.4.Check CloudWatch logs for Lambda output:
+
+![image_alt]()
+
+
+5.5.Check for Slack notifications: 
+
+![image_alt]()
+
+
+## What I’ve Learned
+
+1.How to build asynchronous event-driven architectures
+
+2.Automating infra with Terraform and GitHub Actions
+
+3.Configuring OIDC trust between GitHub and AWS
+
+4.Decoupling failure detection using SQS and Lambda
+
+5.Real-time alerting strategies for modern cloud ops
