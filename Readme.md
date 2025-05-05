@@ -452,7 +452,7 @@ aws sqs send-message \
 
 5.5.Check for Slack notifications: 
 
-![image_alt]()
+![image_alt](https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts/blob/1eb9122095fdc595e3557421789dcd7aaf11ac94/screenshots/Screenshot%202025-05-05%20201122.png)
 
 
 ## What I’ve Learned
