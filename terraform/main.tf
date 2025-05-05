@@ -7,31 +7,31 @@ resource "aws_sqs_queue" "ci_events_queue" {
 
 # Store Slack webhook securely in SSM Parameter Store
 resource "aws_ssm_parameter" "slack_webhook_url" {
-  name = "/slack/webhook_url"
-  type = "SecureString"
-
+  name        = "/slack/webhook_url"
+  type        = "SecureString"
+  value       = var.slack_webhook_url  # You can pass it via TF var or tfvars file
+  description = "Slack webhook for CI events"
+ 
 }
 
 # Create the Lambda function
 resource "aws_lambda_function" "event_processor" {
   function_name = "sqs-event-processor"
-  role          = aws_iam_role.lambda_exec_role.arn # Defined in iam.tf
+  role          = aws_iam_role.lambda_exec_role.arn
   runtime       = "python3.11"
   handler       = "handler.lambda_handler"
   timeout       = 10
   memory_size   = 128
 
-  # Lambda deployment package
   filename         = "${path.module}/lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/lambda.zip")
 
-  # Environment variable to specify the SSM parameter name
+  # Instead of the value, just pass the parameter name
   environment {
     variables = {
-      SLACK_WEBHOOK_URL = data.aws_ssm_parameter.slack_webhook_url.value
+      SLACK_WEBHOOK_PARAM_NAME = aws_ssm_parameter.slack_webhook_url.name
     }
   }
-
 
   tags = {
     Name        = "SQS Event Processor"
