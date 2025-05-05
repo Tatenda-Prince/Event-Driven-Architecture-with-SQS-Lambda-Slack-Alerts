@@ -1,0 +1,224 @@
+# Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts
+
+![image_alt]()
+
+
+## Background
+Modern DevOps teams need to move fast, but also be immediately aware when infrastructure issues arise. Traditional logs and delayed alerts make it hard to detect problems in real-time. To solve this, I  built an event-driven system on AWS that uses SQS and Lambda to instantly notify the DevOps team when things go wrong like CI/CD pipeline failures.
+
+##  Project Overview
+This project is an end-to-end, event-driven alerting system that leverages AWS services such as SQS, Lambda, IAM, and CloudWatch fully automated with Terraform and GitHub Actions. Whenever a CI/CD event (e.g., Terraform failure) occurs, it sends a structured message to SQS, which triggers a Lambda function to process and notify the team via logs or external tools like Slack.
+
+## Project Objectives
+1.Build an asynchronous, decoupled alerting system using SQS and Lambda
+
+2.Automate infrastructure provisioning with Terraform
+
+3.Set up a secure and scalable CI/CD pipeline using GitHub Actions
+
+4.Deliver real-time visibility into infrastructure issues
+
+## Features
+1.Event-driven processing using SQS + Lambda
+
+2.Slack-ready Lambda for team notifications (extendable)
+
+3.CI/CD notifications when Terraform fails
+
+4.IAM-secured roles for GitHub OIDC and Lambda execution
+
+5.Fully automated deployment via GitHub Actions
+
+## Technologies Used
+1.AWS SQS
+
+2.AWS Lambda
+
+3.AWS IAM
+
+4.AWS CloudWatch
+
+5.Terraform
+
+6.GitHub Actions (with OIDC authentication)
+
+## Use Case
+This system solves the real-world challenge of delayed error detection in cloud environments. For instance:
+1.**CI/CD Build Notifications**
+Problem: CI/CD pipeline fails during `terraform plan` or `apply`, but no one notices immediately.
+
+Solution: Send structured error messages to SQS. Lambda reads these and pushes alerts (e.g., to Slack), so teams are aware instantly.
+
+2.**Application Error Alerting**
+Problem: Lambda functions fail silently in production.
+
+Solution: Errors get sent to SQS. Lambda processes them and alerts engineers with logs or summaries before users even notice.
+
+## Prerequisites
+1.AWS Account
+
+2.GitHub repository
+
+3.Terraform CLI installed
+
+4.AWS CLI configured (for testing)
+
+5.Slack Webhook URL (optional, if extending for Slack alerts)
+
+
+Before we start please git clone the repository below to access access to terraform file
+
+```language
+git clone https://github.com/Tatenda-Prince/Event-Driven-Architecture-with-SQS-Lambda-Slack-Alerts.git
+```
+
+
+## Step 1: Copy and paste the following terraform files & lambda functions
+1.1.The Terraform file will create:
+1.AWS SQS Queue
+
+2.Lambda Function
+
+3.IAM Roles and Policies
+
+1.2.Copy and paste this **main.tf**
+```language
+# Create the SQS queue
+resource "aws_sqs_queue" "ci_events_queue" {
+  name                       = "ci-events-queue"
+  visibility_timeout_seconds = 30
+  message_retention_seconds  = 86400
+}
+
+# Create the Lambda function
+resource "aws_lambda_function" "event_processor" {
+  function_name = "sqs-event-processor"
+  role          = aws_iam_role.lambda_exec_role.arn
+  runtime       = "python3.11"
+  handler       = "handler.lambda_handler"
+  timeout       = 10
+  memory_size   = 128
+
+  filename         = "${path.module}/lambda.zip"
+  source_code_hash = filebase64sha256("${path.module}/lambda.zip")
+
+  # Instead of the value, just pass the parameter name
+  environment {
+    variables = {
+      SLACK_WEBHOOK_PARAM_NAME = "/slack/webhook_url"
+    }
+  }
+
+  tags = {
+    Name        = "SQS Event Processor"
+    Environment = "dev"
+  }
+}
+
+# Map SQS queue to Lambda function
+resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {
+  event_source_arn = aws_sqs_queue.ci_events_queue.arn
+  function_name    = aws_lambda_function.event_processor.arn
+  batch_size       = 5
+  enabled          = true
+}
+```
+1.3.Copy and paste this **iam.tf**
+```language
+# IAM Role for Lambda Execution
+resource "aws_iam_role" "lambda_exec_role" {
+  name = "lambda-sqs-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# IAM Policy with SQS, CloudWatch, and SSM Access
+resource "aws_iam_policy" "lambda_policy" {
+  name = "lambda-sqs-cw-ssm-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      # CloudWatch Logs
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      # SQS permissions
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        Resource = aws_sqs_queue.ci_events_queue.arn
+      },
+      # SSM Parameter Store access
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameter"
+        ],
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/slack/webhook_url"
+      }
+    ]
+  })
+}
+
+# Get AWS Account ID
+data "aws_caller_identity" "current" {}
+
+# Attach IAM Policy to Role
+resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = aws_iam_policy.lambda_policy.arn
+}
+
+# Permission for SQS to invoke Lambda
+resource "aws_lambda_permission" "allow_sqs" {
+  statement_id  = "AllowExecutionFromSQS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.event_processor.function_name
+  principal     = "sqs.amazonaws.com"
+  source_arn    = aws_sqs_queue.ci_events_queue.arn
+}
+
+```
+1.4.Copy and paste this **outputs.tf**
+```language
+output "sqs_queue_arn" {
+  value = aws_sqs_queue.ci_events_queue.arn
+}
+
+output "lambda_iam_role_name" {
+  value = aws_iam_role.lambda_exec_role.name
+}
+
+```
+
+1.5.Copy and paste this **variables.tf**
+```language
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+```
