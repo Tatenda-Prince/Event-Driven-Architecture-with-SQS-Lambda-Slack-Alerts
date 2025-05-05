@@ -1,2 +1,2 @@
-slack_webhook_url = "https://hooks.slack.com/services/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"
+slack_webhook_url = "https://hooks.slack.com/services/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"
 
